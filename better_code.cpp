@@ -4,36 +4,43 @@
 
 using namespace std;
 
+void draw(const int& x, ostream& out, size_t position)
+{
+    out << string(position, ' ') << x << endl;
+}
+
 class object_t {
   public:
-    virtual ~object_t() {}
-    virtual void draw(ostream&, size_t) const = 0;
+    object_t(const int& x) : self_(x) {}
+
+    friend void draw(const object_t& x, ostream& out, size_t position)
+    {
+        draw(x.self_, out, position);
+    }
+
+  private:
+    int self_;
 };
 
-using document_t = vector<shared_ptr<object_t>>;
+using document_t = vector<object_t>;
 
 void draw(const document_t& x, ostream& out, size_t position)
 {
     out << string(position, ' ') << "<document>" << endl;
     for (const auto& e : x) {
-        e->draw(out, position + 2);
+        draw(e, out, position + 2);
     }
     out << string(position, ' ') << "</document>" << endl;
 }
-
-class my_class_t final : public object_t {
-  public:
-    void draw(ostream& out, size_t position) const override
-    {
-        out << string(position, ' ') << "my_class_t" << endl;
-    }
-};
 
 int main()
 {
     document_t document;
 
-    document.emplace_back(make_shared<my_class_t>());
+    document.emplace_back(0);
+    document.emplace_back(1);
+    document.emplace_back(2);
+    document.emplace_back(3);
 
     draw(document, cout, 0);
 }
