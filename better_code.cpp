@@ -22,6 +22,8 @@ class object_t {
         cout << "copy" << endl;
     }
 
+    object_t(object_t&& x) noexcept = default;
+
     object_t& operator=(object_t x) noexcept
     {
         self_ = move(x.self_);
