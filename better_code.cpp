@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -11,14 +12,19 @@ void draw(const int& x, ostream& out, size_t position)
 
 class object_t {
   public:
-    object_t(const int& x) : self_(make_unique<int_model_t>(x)) {}
-
-    object_t(const object_t& x) : self_(make_unique<int_model_t>(*x.self_)) {}
-
-    object_t& operator=(const object_t& x)
+    object_t(const int& x) : self_(make_unique<int_model_t>(x))
     {
-        object_t tmp(x);
-        self_ = move(tmp.self_);
+        cout << "ctor" << endl;
+    }
+
+    object_t(const object_t& x) : self_(make_unique<int_model_t>(*x.self_))
+    {
+        cout << "copy" << endl;
+    }
+
+    object_t& operator=(object_t x) noexcept
+    {
+        self_ = move(x.self_);
         return *this;
     }
 
@@ -53,14 +59,30 @@ void draw(const document_t& x, ostream& out, size_t position)
     out << string(position, ' ') << "</document>" << endl;
 }
 
+object_t func()
+{
+    object_t result = 5;
+    return result;
+}
+
 int main()
 {
+    // TODO Quiz 1: what does this print?
+    // object_t x = func();
+
+    // TODO Quiz 2: what does this print?
+    // object_t x = 0;
+    // x = func();
+
     document_t document;
+    document.reserve(5);
 
     document.emplace_back(0);
     document.emplace_back(1);
     document.emplace_back(2);
     document.emplace_back(3);
+
+    reverse(document.begin(), document.end());
 
     draw(document, cout, 0);
 }
