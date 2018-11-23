@@ -5,6 +5,11 @@
 
 using namespace std;
 
+void draw(const string& x, ostream& out, size_t position)
+{
+    out << string(position, ' ') << x << endl;
+}
+
 void draw(const int& x, ostream& out, size_t position)
 {
     out << string(position, ' ') << x << endl;
@@ -12,15 +17,11 @@ void draw(const int& x, ostream& out, size_t position)
 
 class object_t {
   public:
-    object_t(const int& x) : self_(make_unique<int_model_t>(x))
-    {
-        cout << "ctor" << endl;
-    }
+    object_t(string x) : self_(make_unique<string_model_t>(move(x))) {}
 
-    object_t(const object_t& x) : self_(make_unique<int_model_t>(*x.self_))
-    {
-        cout << "copy" << endl;
-    }
+    object_t(int x) : self_(make_unique<int_model_t>(move(x))) {}
+
+    object_t(const object_t& x) : self_(x.self_->copy_()) {}
 
     object_t(object_t&&) noexcept = default;
 
@@ -37,10 +38,35 @@ class object_t {
     }
 
   private:
-    struct int_model_t {
-        int_model_t(const int& x) : data_(x) {}
+    struct concept_t {
+        virtual ~concept_t() = default;
+        virtual unique_ptr<concept_t> copy_() const = 0;
+        virtual void draw_(ostream&, size_t) const = 0;
+    };
+    struct string_model_t final : concept_t {
+        string_model_t(string x) : data_(move(x)) {}
 
-        void draw_(ostream& out, size_t position) const
+        unique_ptr<concept_t> copy_() const override
+        {
+            return make_unique<string_model_t>(*this);
+        }
+
+        void draw_(ostream& out, size_t position) const override
+        {
+            draw(data_, out, position);
+        }
+
+        string data_;
+    };
+    struct int_model_t final : concept_t {
+        int_model_t(int x) : data_(move(x)) {}
+
+        unique_ptr<concept_t> copy_() const override
+        {
+            return make_unique<int_model_t>(*this);
+        }
+
+        void draw_(ostream& out, size_t position) const override
         {
             draw(data_, out, position);
         }
@@ -48,7 +74,7 @@ class object_t {
         int data_;
     };
 
-    unique_ptr<int_model_t> self_;
+    unique_ptr<concept_t> self_;
 };
 
 using document_t = vector<object_t>;
@@ -78,14 +104,11 @@ int main()
     // x = func();
 
     document_t document;
-    document.reserve(5);
 
     document.emplace_back(0);
-    document.emplace_back(1);
+    document.emplace_back(string("Hello!"));
     document.emplace_back(2);
     document.emplace_back(3);
-
-    reverse(document.begin(), document.end());
 
     draw(document, cout, 0);
 }
