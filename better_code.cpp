@@ -22,13 +22,14 @@ class object_t {
         cout << "copy" << endl;
     }
 
-    object_t(object_t&& x) noexcept = default;
+    object_t(object_t&&) noexcept = default;
 
-    object_t& operator=(object_t x) noexcept
+    object_t& operator=(const object_t& x) noexcept
     {
-        self_ = move(x.self_);
-        return *this;
+        return *this = object_t(x);
     }
+
+    object_t& operator=(object_t&&) noexcept = default;
 
     friend void draw(const object_t& x, ostream& out, size_t position)
     {
