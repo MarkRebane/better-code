@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -18,7 +19,10 @@ class object_t {
     {
     }
 
-    object_t(const object_t& x) : self_(x.self_->copy_()) {}
+    object_t(const object_t& x) : self_(x.self_->copy_())
+    {
+        cout << "copy" << endl;
+    }
 
     object_t(object_t&&) noexcept = default;
 
@@ -71,6 +75,26 @@ void draw(const document_t& x, ostream& out, size_t position)
     out << string(position, ' ') << "</document>" << endl;
 }
 
+using history_t = vector<document_t>;
+
+void commit(history_t& x)
+{
+    assert(x.size());
+    x.push_back(x.back());
+}
+
+void undo(history_t& x)
+{
+    assert(x.size());
+    x.pop_back();
+}
+
+document_t& current(history_t& x)
+{
+    assert(x.size());
+    return x.back();
+}
+
 class my_class_t {
 };
 
@@ -81,12 +105,25 @@ void draw(const my_class_t&, ostream& out, size_t position)
 
 int main()
 {
-    document_t document;
+    history_t h(1);
 
-    document.emplace_back(0);
-    document.emplace_back(string("Hello!"));
-    document.emplace_back(document);
-    document.emplace_back(my_class_t());
+    current(h).emplace_back(0);
+    current(h).emplace_back(string("Hello!"));
 
-    draw(document, cout, 0);
+    draw(current(h), cout, 0);
+    cout << "--------------------" << endl;
+
+    commit(h);
+
+    current(h)[0] = 42.5;
+    current(h)[1] = string("World");
+    current(h).emplace_back(current(h));
+    current(h).emplace_back(my_class_t());
+
+    draw(current(h), cout, 0);
+    cout << "--------------------" << endl;
+
+    undo(h);
+
+    draw(current(h), cout, 0);
 }
