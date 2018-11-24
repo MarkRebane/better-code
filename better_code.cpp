@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -15,23 +16,9 @@ void draw(const T& x, ostream& out, size_t position)
 class object_t {
   public:
     template <typename T>
-    object_t(T x) : self_(make_unique<model<T>>(move(x)))
+    object_t(T x) : self_(make_shared<model<T>>(move(x)))
     {
     }
-
-    object_t(const object_t& x) : self_(x.self_->copy_())
-    {
-        cout << "copy" << endl;
-    }
-
-    object_t(object_t&&) noexcept = default;
-
-    object_t& operator=(const object_t& x) noexcept
-    {
-        return *this = object_t(x);
-    }
-
-    object_t& operator=(object_t&&) noexcept = default;
 
     friend void draw(const object_t& x, ostream& out, size_t position)
     {
@@ -41,17 +28,11 @@ class object_t {
   private:
     struct concept_t {
         virtual ~concept_t() = default;
-        virtual unique_ptr<concept_t> copy_() const = 0;
         virtual void draw_(ostream&, size_t) const = 0;
     };
     template <typename T>
     struct model final : concept_t {
         model(T x) : data_(move(x)) {}
-
-        unique_ptr<concept_t> copy_() const override
-        {
-            return make_unique<model>(*this);
-        }
 
         void draw_(ostream& out, size_t position) const override
         {
@@ -61,7 +42,7 @@ class object_t {
         T data_;
     };
 
-    unique_ptr<concept_t> self_;
+    shared_ptr<const concept_t> self_;
 };
 
 using document_t = vector<object_t>;
@@ -116,6 +97,13 @@ int main()
     commit(h);
 
     current(h)[0] = 42.5;
+
+    auto saving = async([document = current(h)]() {
+        this_thread::sleep_for(chrono::seconds(3));
+        cout << "-------- 'save' --------" << endl;
+        draw(document, cout, 0);
+    });
+
     current(h)[1] = string("World");
     current(h).emplace_back(current(h));
     current(h).emplace_back(my_class_t());
